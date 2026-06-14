@@ -39,8 +39,6 @@ export default function AddItem() {
 
     const [pitStops, setPitStops] = useState<PitStop[]>([]);
     const [races, setRaces] = useState<Race[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
     const [selectedRace, setSelectedRace] = useState<Race | null>(null);
 
@@ -134,16 +132,14 @@ export default function AddItem() {
     }
 
     const handlePitStopRequest = async () => {
-        setLoading(true);
-        setError(null);
 
         try {
             const data = await getPitStops();
             setPitStops(data)
         } catch (err) {
-            setError((err as Error).message)
+            console.log((err as Error).message)
         } finally {
-            setLoading(false);
+            console.log(false);
         }
     }
 
@@ -169,10 +165,10 @@ export default function AddItem() {
 
         } catch (err) {
                 if (err instanceof Error) {
-                    setError(err.message);
+                    console.log(err.message);
                 }
             } finally {
-                setLoading(false);
+                console.log(false);
             }
         }
 
@@ -214,7 +210,7 @@ export default function AddItem() {
             <Grid size={{xs:12, md:6, lg:4}}>
                     <Autocomplete
                         options={races} value={selectedRace} getOptionLabel={formatRaceName}
-                        onChange={(e, race) => {setSelectedRace(race);}}
+                        onChange={(_, race) => {setSelectedRace(race);}}
                         renderInput={(params) => (
                             <TextField {...params} label="Select Race" />
                         )}/>
@@ -223,7 +219,7 @@ export default function AddItem() {
             <Grid size={{xs:12, md:6, lg:4}}>
                     <Autocomplete
                         options={driverNames} value={selectedDriver}
-                        onChange={(e, newValue) => {setSelectedDriver(newValue);}}
+                        onChange={(_, newValue) => {setSelectedDriver(newValue);}}
                           renderInput={(params) => (
                         <TextField {...params} label="Driver" />
                     )}/>

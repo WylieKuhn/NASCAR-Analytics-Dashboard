@@ -1,4 +1,4 @@
-import {Autocomplete, Button, Grid, TextField, Typography} from "@mui/material";
+import {Autocomplete, Button, Grid, TextField, Typography, FormControlLabel, Checkbox} from "@mui/material";
 import {LineChart, ScatterChart} from "@mui/x-charts";
 import {useEffect, useState} from "react";
 import {roundToUp} from "round-to";
@@ -40,11 +40,11 @@ export default function DriverData() {
 
     const [pitStops, setPitStops] = useState<PitStop[]>([]);
     const [races, setRaces] = useState<Race[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
     const [selectedRace, setSelectedRace] = useState<Race | null>(null);
     const [lapTimes, setLapTimes] = useState<LapData[] | null>(null);
+    const [excludeOutliers, setExcludeOutliers] = useState<boolean>(false);
+
 
     async function getPitStops(): Promise<PitStop[]> {
         const response = await fetch(
@@ -152,16 +152,14 @@ export default function DriverData() {
     }
 
     const handlePitStopRequest = async () => {
-        setLoading(true);
-        setError(null);
 
         try {
             const data = await getPitStops();
             setPitStops(data)
         } catch (err) {
-            setError((err as Error).message)
+            console.log((err as Error).message)
         } finally {
-            setLoading(false);
+            console.log(false);
         }
     }
 
@@ -186,10 +184,10 @@ export default function DriverData() {
 
             } catch (err) {
                 if (err instanceof Error) {
-                    setError(err.message);
+                    console.log(err.message);
                 }
             } finally {
-                setLoading(false);
+                console.log(false);
             }
         }
 
@@ -212,10 +210,10 @@ export default function DriverData() {
 
             } catch (err) {
                 if (err instanceof Error) {
-                    setError(err.message);
+                    console.log(err.message);
                 }
             } finally {
-                setLoading(false);
+                console.log(false);
             }
         }
 
@@ -233,7 +231,10 @@ export default function DriverData() {
         return `${month}/${day} - ${race.track_name}`;
     }
 
-    const filteredPitStops = pitStops.filter(
+    const filteredPitStops = excludeOutliers ? pitStops.filter(
+        (stop) =>
+            stop.pit_stop_duration !== -1 &&
+            (!selectedDriver || stop.driver_name == selectedDriver) && stop.pit_stop_duration < 40) : pitStops.filter(
         (stop) =>
             stop.pit_stop_duration !== -1 &&
             (!selectedDriver || stop.driver_name == selectedDriver)
@@ -308,17 +309,22 @@ export default function DriverData() {
 
                     <Autocomplete
                         options={races} value={selectedRace} getOptionLabel={formatRaceName}
-                        onChange={(e, race) => {setSelectedRace(race);}}
+                        onChange={(_, race) => {setSelectedRace(race);}}
                         renderInput={(params) => (
                             <TextField {...params} label="Select Race" />
                         )}/>
                     <Button onClick={handlePitStopRequest} variant={"contained"}>Get Data</Button>
                     <Autocomplete
                         options={driverNames} value={selectedDriver}
-                        onChange={(e, newValue) => {setSelectedDriver(newValue);}}
+                        onChange={(_, newValue) => {setSelectedDriver(newValue);}}
                         renderInput={(params) => (
                             <TextField {...params} label="Driver" />
                         )}/>
+                    <FormControlLabel control={
+                        <Checkbox checked={excludeOutliers} onChange={((_, checked) => setExcludeOutliers(checked))}/>
+                    } label={"Exclude OUtliers"}
+                                      sx={{ width: '100%', mt: 1, display: 'flex', justifyContent: 'flex-start' }}
+                    />
 
                 </Grid>
                 <Grid size={{xs:12, md:4, lg: 3}} sx={{display: "flex", px:2, flexDirection: "column", boxShadow:3, borderRadius: 5}}>
