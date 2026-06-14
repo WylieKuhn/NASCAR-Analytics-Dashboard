@@ -1,6 +1,5 @@
 import {Autocomplete, Button, Grid, TextField, Typography} from "@mui/material";
 import {LineChart, ScatterChart} from "@mui/x-charts";
-import Sidebar from './sidebar'
 import {useEffect, useState} from "react";
 import {roundToUp} from "round-to";
 import {standardDeviation} from "simple-statistics";
