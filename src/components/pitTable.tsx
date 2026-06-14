@@ -1,6 +1,4 @@
 import {Autocomplete, Button, Grid, TextField} from "@mui/material";
-import {Text} from "lucide-react";
-import Sidebar from './sidebar'
 import {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import {standardDeviation, zScore} from "simple-statistics";
