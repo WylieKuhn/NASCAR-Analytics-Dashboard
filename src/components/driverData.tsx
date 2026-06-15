@@ -263,10 +263,10 @@ export default function DriverData() {
 
     const driverLapData = lapTimes?.find((lapdata) => lapdata.FullName == selectedDriver);
 
-    const lapsSinceTireChange =
+    /* const lapsSinceTireChange =
         driverLapData && lastTireChange
             ? driverLapData.Laps.slice(lastTireChange.lap_count)
-            : [];
+            : []; */
 
     const lapsSinceTLastPitStop =
         driverLapData && lastPitStop
@@ -361,19 +361,19 @@ export default function DriverData() {
                     >
                         {roundToUp(stopDurations, 3)}
                     </Typography>
-                    <Typography align="center" sx={{py:1, fontSize: 20, fontWeight:"bold"}}>Slowest Stop</Typography>
+                    <Typography align="center" sx={{py:1, fontSize: 20, fontWeight:"bold"}}>Laps Since Tire Change</Typography>
                     <Typography
                         align="center"
                         sx={{fontSize: 18,}}
                     >
-                        {roundToUp(slowestPitStopTime,3)}s
+                        Coming Soon
                     </Typography>
-                    <Typography align="center" sx={{py:1, fontSize: 20, fontWeight:"bold"}}> Last Pit Lap</Typography>
+                    <Typography align="center" sx={{py:1, fontSize: 20, fontWeight:"bold"}}>Other Data</Typography>
                     <Typography
                         align="center"
                         sx={{fontSize: 18,}}
                     >
-                        {lastPitStop?.lap_count}
+                        Coming Soon
                     </Typography>
 
 
