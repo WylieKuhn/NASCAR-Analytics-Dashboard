@@ -1,7 +1,7 @@
-import {Autocomplete, Button, Grid, TextField} from "@mui/material";
+import {Autocomplete, Button, Checkbox, FormControlLabel, Grid, TextField} from "@mui/material";
 import {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
-import {standardDeviation, zScore} from "simple-statistics";
+import {cumulativeStdNormalProbability, standardDeviation, zScore} from "simple-statistics";
 import {roundToUp} from "round-to";
 
 
@@ -41,6 +41,8 @@ export default function AddItem() {
     const [races, setRaces] = useState<Race[]>([]);
     const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
     const [selectedRace, setSelectedRace] = useState<Race | null>(null);
+    const [excludeOutliers, setExcludeOutliers] = useState<boolean>(false);
+
 
     async function getPitStops(): Promise<PitStop[]> {
         const response = await fetch(
@@ -186,11 +188,52 @@ export default function AddItem() {
         return `${month}/${day} - ${race.track_name}`;
     }
 
-    const filteredPitStops = pitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver))
+    const filteredPitStops = excludeOutliers ? pitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver) && stop.pit_stop_duration <= 40) : pitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver));
 
-    const stopStdDev = pitStops.length > 1 ? standardDeviation(pitStops.map(stop => stop.pit_stop_duration)) : 1;
+    const stopStdDev =
+        pitStops.length > 1
+            ? standardDeviation(
+                (excludeOutliers
+                        ? pitStops.filter(
+                            stop =>
+                                stop.pit_stop_duration !== -1 &&
+                                stop.pit_stop_duration <= 40
+                        )
+                        : pitStops.filter(
+                            stop => stop.pit_stop_duration !== -1
+                        )
+                ).map(stop => stop.pit_stop_duration)
+            )
+            : 1;
 
-    const avgStopTime = pitStops.length > 0 ? pitStops.reduce((sum, stop) => sum + stop.pit_stop_duration, 0) / pitStops.length : 0;
+    const avgStopTime =
+        pitStops.length > 0
+            ? (
+                excludeOutliers
+                    ? pitStops.filter(
+                        stop =>
+                            stop.pit_stop_duration !== -1 &&
+                            stop.pit_stop_duration <= 40
+                    )
+                    : pitStops.filter(
+                        stop => stop.pit_stop_duration !== -1
+                    )
+            ).reduce(
+                (sum, stop) => sum + stop.pit_stop_duration,
+                0
+            ) /
+            (
+                excludeOutliers
+                    ? pitStops.filter(
+                        stop =>
+                            stop.pit_stop_duration !== -1 &&
+                            stop.pit_stop_duration <= 40
+                    )
+                    : pitStops.filter(
+                        stop => stop.pit_stop_duration !== -1
+                    )
+            ).length
+            : 0;
 
     return(
         <Grid container spacing={3} sx={{px:4, py:4, mx:"auto"}}>
@@ -203,11 +246,19 @@ export default function AddItem() {
 
             </Grid>
 
-            <Grid size={{xs:12, md:6, lg:4}}>
+            <Grid size={{xs:12, md:6, lg:3}}>
                 <Button onClick={handlePitStopRequest} variant={"contained"}>Get Data</Button>
             </Grid>
 
-            <Grid size={{xs:12, md:6, lg:4}}>
+            <Grid size={{xs:12, md:6, lg:3}}>
+                <FormControlLabel control={
+                    <Checkbox checked={excludeOutliers} onChange={((_, checked) => setExcludeOutliers(checked))}/>
+                } label={"Exclude Outliers"}
+                                  sx={{ width: '100%', mt: 1, display: 'flex', justifyContent: 'flex-start' }}
+                />
+            </Grid>
+
+            <Grid size={{xs:12, md:6, lg:3}}>
                     <Autocomplete
                         options={races} value={selectedRace} getOptionLabel={formatRaceName}
                         onChange={(_, race) => {setSelectedRace(race);}}
@@ -216,7 +267,7 @@ export default function AddItem() {
                         )}/>
             </Grid>
 
-            <Grid size={{xs:12, md:6, lg:4}}>
+            <Grid size={{xs:12, md:6, lg:3}}>
                     <Autocomplete
                         options={driverNames} value={selectedDriver}
                         onChange={(_, newValue) => {setSelectedDriver(newValue);}}
@@ -227,7 +278,7 @@ export default function AddItem() {
 
             <Grid size={{xs:12}}>
                 <table className="w-full table-auto border-collapse text-center">
-                    <thead className="text-align-center bg-slate-50">
+                    <thead className="text-align-center bg-slate-200">
                         <tr>
                             <th scope="col" className="px-6">Number</th>
                             <th scope="col">Name</th>
@@ -236,6 +287,7 @@ export default function AddItem() {
                             <th scope="col">Positions Gained/Lost</th>
                             <th scope="col">Pit Stop Type</th>
                             <th scope="col">Z-Score</th>
+                            <th scope="col">Top %</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -252,6 +304,7 @@ export default function AddItem() {
                                 <td scope="row">{stop.positions_gained_lost}</td>
                                 <td scope="row">{stop.pit_stop_type}</td>
                                 <td scope="row">{roundToUp(zScore(stop.pit_stop_duration, avgStopTime, stopStdDev),6)}</td>
+                                <td scope="row">{roundToUp((cumulativeStdNormalProbability(zScore(stop.pit_stop_duration, avgStopTime, stopStdDev)) * 100), 2)}</td>
                             </tr>
 
                     ))}
