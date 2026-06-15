@@ -188,7 +188,10 @@ export default function AddItem() {
         return `${month}/${day} - ${race.track_name}`;
     }
 
-    const filteredPitStops = excludeOutliers ? pitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver) && stop.pit_stop_duration <= 40) : pitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver));
+    const filteredPitStops = excludeOutliers ?
+        pitStops.filter((stop) => stop.pit_stop_duration !== -1 && (
+            !selectedDriver || stop.driver_name == selectedDriver) && stop.pit_stop_duration <= 40) :
+        pitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver));
 
     const stopStdDev =
         pitStops.length > 1
@@ -291,7 +294,7 @@ export default function AddItem() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {filteredPitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver)).map((stop =>
+                        {filteredPitStops.map((stop =>
                             <tr className={`${stop.pit_in_flag_status == 1 ? `bg-green-400` : stop.pit_in_flag_status == 2 ? `bg-yellow-200` : `bg-red-400`}`
 
                                 }
