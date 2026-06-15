@@ -188,9 +188,9 @@ export default function AddItem() {
 
     const filteredPitStops = pitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver))
 
-    const stopStdDev = filteredPitStops.length > 1 ? standardDeviation(filteredPitStops.map(stop => stop.pit_stop_duration)) : 1;
+    const stopStdDev = pitStops.length > 1 ? standardDeviation(pitStops.map(stop => stop.pit_stop_duration)) : 1;
 
-    const avgStopTime = filteredPitStops.length > 0 ? filteredPitStops.reduce((sum, stop) => sum + stop.pit_stop_duration, 0) / pitStops.length : 0;
+    const avgStopTime = pitStops.length > 0 ? pitStops.reduce((sum, stop) => sum + stop.pit_stop_duration, 0) / pitStops.length : 0;
 
     return(
         <Grid container spacing={3} sx={{px:4, py:4, mx:"auto"}}>
@@ -239,7 +239,7 @@ export default function AddItem() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {pitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver)).map((stop =>
+                        {filteredPitStops.filter((stop) => stop.pit_stop_duration !== -1 && (!selectedDriver || stop.driver_name == selectedDriver)).map((stop =>
                             <tr className={`${stop.pit_in_flag_status == 1 ? `bg-green-400` : stop.pit_in_flag_status == 2 ? `bg-yellow-200` : `bg-red-400`}`
 
                                 }

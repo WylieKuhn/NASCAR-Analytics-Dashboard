@@ -359,7 +359,7 @@ export default function DriverData() {
                         align="center"
                         sx={{fontSize: 18,}}
                     >
-                        {roundToUp(stopDurations, 3)}
+                        {roundToUp(stopDurations, 3)}s
                     </Typography>
                     <Typography align="center" sx={{py:1, fontSize: 20, fontWeight:"bold"}}>Laps Since Tire Change</Typography>
                     <Typography
