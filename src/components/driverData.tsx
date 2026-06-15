@@ -281,16 +281,6 @@ export default function DriverData() {
             }))
             : [];
 
-    const firstFlyingLapTime =
-        lapsSinceTireChange[10]?.LapTime ??
-        0;
-
-    const tireFalloffData =
-        lapsSinceTireChange.map((lap) => ({
-            lap: lap.Lap,
-            falloff: lap.LapTime - firstFlyingLapTime,
-        }))
-
 
     const stopDurations = filteredPitStops.length > 1 ?
         standardDeviation(filteredPitStops.map(stop => stop.pit_stop_duration)) : 0;
@@ -305,7 +295,7 @@ export default function DriverData() {
                     </Link>
                 </Grid>
 
-                <Grid size={{xs:12, md: 4, lg:3}} sx={{boxShadow:3, p:1, borderRadius:5, display: "flex", flexDirection: "column", gap:2}}>
+                <Grid size={{xs:12, md: 4, lg:3}} sx={{boxShadow:3, p:2, borderRadius:5, display: "flex", flexDirection: "column", gap:2}}>
 
                     <Autocomplete
                         options={races} value={selectedRace} getOptionLabel={formatRaceName}
@@ -322,7 +312,7 @@ export default function DriverData() {
                         )}/>
                     <FormControlLabel control={
                         <Checkbox checked={excludeOutliers} onChange={((_, checked) => setExcludeOutliers(checked))}/>
-                    } label={"Exclude OUtliers"}
+                    } label={"Exclude Outliers"}
                                       sx={{ width: '100%', mt: 1, display: 'flex', justifyContent: 'flex-start' }}
                     />
 
@@ -358,9 +348,6 @@ export default function DriverData() {
                     >
                         {lastPitStop?.lap_count}
                     </Typography>
-
-
-
                 </Grid>
 
                 {/* Stats */}
@@ -407,8 +394,8 @@ export default function DriverData() {
 
                 <Grid size={{xs: 12, md:12, lg:6}} sx={{display: "flex", flexDirection: "column", boxShadow:3, borderRadius: 5}}>
                     <ScatterChart
-                        width={500}
                         height={300}
+                        width={400}
                         series={[
                             {
                                 label: selectedDriver ?? "All Drivers",
@@ -423,8 +410,8 @@ export default function DriverData() {
 
                 <Grid size={{xs: 12, md:12, lg:6}} sx={{display: "flex", flexDirection: "column", boxShadow:3, borderRadius: 5}}>
                 <LineChart
-                    width={500}
                     height={300}
+                    width={400}
                     series={[
                         {
                             data: runningPositionDeltaData.map(posdata => posdata.delta),
@@ -440,28 +427,6 @@ export default function DriverData() {
                     ]}
 
                 />
-                </Grid>
-
-                <Grid size={{xs: 12, md:12, lg:6}} sx={{display: "flex", flexDirection: "column", boxShadow:3, borderRadius: 5}}>
-                    <LineChart
-                        width={500}
-                        height={300}
-                        series={[
-                            {
-                                data: tireFalloffData.map(posdata => posdata.falloff),
-                                label: "Tire Falloff Since Last Tire Change",
-                                curve: "linear"
-
-                            }]}
-                        xAxis={[
-                            {
-                                data: tireFalloffData.map(d => d.lap),
-                                label: "Lap",
-                                scaleType: "linear",
-                            }
-                        ]}
-
-                    />
                 </Grid>
 
             </Grid>
