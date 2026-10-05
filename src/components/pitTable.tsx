@@ -212,109 +212,119 @@ export default function AddItem() {
     const avgStopTime =
         pitStops.length > 0
             ? (
-                excludeOutliers
-                    ? pitStops.filter(
-                        stop =>
-                            stop.pit_stop_duration !== -1 &&
-                            stop.pit_stop_duration <= 40
-                    )
-                    : pitStops.filter(
-                        stop => stop.pit_stop_duration !== -1
-                    )
-            ).reduce(
-                (sum, stop) => sum + stop.pit_stop_duration,
-                0
-            ) /
-            (
-                excludeOutliers
-                    ? pitStops.filter(
-                        stop =>
-                            stop.pit_stop_duration !== -1 &&
-                            stop.pit_stop_duration <= 40
-                    )
-                    : pitStops.filter(
-                        stop => stop.pit_stop_duration !== -1
-                    )
-            ).length
+                  (
+                      excludeOutliers
+                          ? pitStops.filter(
+                                (stop) => stop.pit_stop_duration !== -1 && stop.pit_stop_duration <= 40
+                            )
+                          : pitStops.filter((stop) => stop.pit_stop_duration !== -1)
+                  ).reduce((sum, stop) => sum + stop.pit_stop_duration, 0) /
+                  (
+                      excludeOutliers
+                          ? pitStops.filter(
+                                (stop) => stop.pit_stop_duration !== -1 && stop.pit_stop_duration <= 40
+                            )
+                          : pitStops.filter((stop) => stop.pit_stop_duration !== -1)
+                  ).length
+              )
             : 0;
 
-    return(
-        <Grid container spacing={3} sx={{px:4, py:4, mx:"auto"}}>
-            <Grid size={{xs:12}} sx={{display:"flex", justifyContent:"center"}}>
-                <Link to="/">
-                    <Button variant="outlined" fullWidth>
-                        Analytics
+    return (
+        <div className="dashboard-shell">
+            <header className="page-header">
+                <div>
+                    <span className="eyebrow">NASCAR analytics</span>
+                    <h1>Pit Stop Data Table</h1>
+                </div>
+                <div className="header-actions">
+                    <Link to="/" className="nav-link">
+                        <Button variant="outlined" className="secondary-btn">
+                            Analytics
+                        </Button>
+                    </Link>
+                </div>
+            </header>
+
+            <div className="filters-panel">
+                <div className="filter-grid">
+                    <Button onClick={handlePitStopRequest} variant="contained" className="primary-btn" sx={{ height: '56px' }}>
+                        Get Data
                     </Button>
-                </Link>
 
-            </Grid>
-
-            <Grid size={{xs:12, md:6, lg:3}}>
-                <Button onClick={handlePitStopRequest} variant={"contained"}>Get Data</Button>
-            </Grid>
-
-            <Grid size={{xs:12, md:6, lg:3}}>
-                <FormControlLabel control={
-                    <Checkbox checked={excludeOutliers} onChange={((_, checked) => setExcludeOutliers(checked))}/>
-                } label={"Exclude Outliers"}
-                                  sx={{ width: '100%', mt: 1, display: 'flex', justifyContent: 'flex-start' }}
-                />
-            </Grid>
-
-            <Grid size={{xs:12, md:6, lg:3}}>
                     <Autocomplete
-                        options={races} value={selectedRace} getOptionLabel={formatRaceName}
-                        onChange={(_, race) => {setSelectedRace(race);}}
-                        renderInput={(params) => (
-                            <TextField {...params} label="Select Race" />
-                        )}/>
-            </Grid>
+                        options={races}
+                        value={selectedRace}
+                        getOptionLabel={formatRaceName}
+                        onChange={(_, race) => setSelectedRace(race)}
+                        renderInput={(params) => <TextField {...params} label="Select Race" />}
+                    />
 
-            <Grid size={{xs:12, md:6, lg:3}}>
                     <Autocomplete
-                        options={driverNames} value={selectedDriver}
-                        onChange={(_, newValue) => {setSelectedDriver(newValue);}}
-                          renderInput={(params) => (
-                        <TextField {...params} label="Driver" />
-                    )}/>
-            </Grid>
+                        options={driverNames}
+                        value={selectedDriver}
+                        onChange={(_, newValue) => setSelectedDriver(newValue)}
+                        renderInput={(params) => <TextField {...params} label="Driver" />}
+                    />
 
-            <Grid size={{xs:12}}>
-                <table className="w-full table-auto border-collapse text-center">
-                    <thead className="text-align-center bg-slate-200">
-                        <tr>
-                            <th scope="col" className="px-6">Number</th>
-                            <th scope="col">Name</th>
-                            <th scope="col">Pit In Lap</th>
-                            <th scope="col">Pit Stop Duration</th>
-                            <th scope="col">Positions Gained/Lost</th>
-                            <th scope="col">Pit Stop Type</th>
-                            <th scope="col">Z-Score</th>
-                            <th scope="col">Top %</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {filteredPitStops.map((stop =>
-                            <tr className={`${stop.pit_in_flag_status == 1 ? `bg-green-400` : stop.pit_in_flag_status == 2 ? `bg-yellow-200` : `bg-red-400`}`
+                    <div className="checkbox-wrap">
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={excludeOutliers}
+                                    onChange={(_, checked) => setExcludeOutliers(checked)}
+                                    sx={{ color: '#38bdf8', '&.Mui-checked': { color: '#38bdf8' } }}
+                                />
+                            }
+                            label="Exclude Outliers"
+                        />
+                    </div>
+                </div>
+            </div>
 
-                                }
-
-                            >
-                                <td scope="row">{stop.vehicle_number}</td>
-                                <td scope="row">{stop.driver_name}</td>
-                                <td scope="row">{stop.lap_count}</td>
-                                <td scope="row">{stop.pit_stop_duration}</td>
-                                <td scope="row">{stop.positions_gained_lost}</td>
-                                <td scope="row">{stop.pit_stop_type}</td>
-                                <td scope="row">{roundToUp(zScore(stop.pit_stop_duration, avgStopTime, stopStdDev),6)}</td>
-                                <td scope="row">{roundToUp((cumulativeStdNormalProbability(zScore(stop.pit_stop_duration, avgStopTime, stopStdDev)) * 100), 2)}</td>
+            <div className="table-panel">
+                <div className="table-wrap">
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>Number</th>
+                                <th>Name</th>
+                                <th>Pit In Lap</th>
+                                <th>Pit Stop Duration</th>
+                                <th>Positions Gained/Lost</th>
+                                <th>Pit Stop Type</th>
+                                <th>Z-Score</th>
+                                <th>Top %</th>
                             </tr>
+                        </thead>
+                        <tbody>
+                            {filteredPitStops.map((stop) => {
+                                const zValue = zScore(stop.pit_stop_duration, avgStopTime, stopStdDev);
+                                const statusClass =
+                                    stop.pit_in_flag_status === 1
+                                        ? 'status-green'
+                                        : stop.pit_in_flag_status === 2
+                                          ? 'status-yellow'
+                                          : 'status-red';
 
-                    ))}
-                    </tbody>
-                </table>
-            </Grid>
-        </Grid>
-
-    )
+                                return (
+                                    <tr key={`${stop.driver_name}-${stop.lap_count}-${stop.vehicle_number}`}>
+                                        <td>{stop.vehicle_number}</td>
+                                        <td>{stop.driver_name}</td>
+                                        <td>{stop.lap_count}</td>
+                                        <td>{stop.pit_stop_duration}s</td>
+                                        <td>{stop.positions_gained_lost}</td>
+                                        <td>
+                                            <span className={`status-pill ${statusClass}`}>{stop.pit_stop_type}</span>
+                                        </td>
+                                        <td>{roundToUp(zValue, 6)}</td>
+                                        <td>{roundToUp(cumulativeStdNormalProbability(zValue) * 100, 2)}%</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
 }
