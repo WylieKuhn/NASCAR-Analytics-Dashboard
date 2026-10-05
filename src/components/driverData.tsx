@@ -287,6 +287,9 @@ export default function DriverData() {
         x: stop.pit_stop_duration,
         y: stop.positions_gained_lost
     }))
+
+    const driverLapData = lapTimes?.find((lapdata) => lapdata.FullName == selectedDriver);
+
     const lastTireChange = filteredPitStops.filter((stop) => stop.right_front_tire_changed ||
         stop.right_rear_tire_changed ||
         stop.left_front_tire_changed ||
@@ -308,9 +311,27 @@ export default function DriverData() {
         ? Math.max(0, currentLap - lastRightTireChange.lap_count)
         : null;
 
-    const lastPitStop = filteredPitStops.at(-1);
+    const getLapTimesAfterStop = (stop: PitStop | null | undefined) => {
+        if (!stop || !driverLapData) {
+            return [] as Array<{ lap: number; lapTime: number }>;
+        }
 
-    const driverLapData = lapTimes?.find((lapdata) => lapdata.FullName == selectedDriver);
+        const firstRelevantLap = stop.lap_count + 4;
+
+        return driverLapData.Laps.filter((lap) => lap.Lap >= firstRelevantLap)
+            .slice(0, 12)
+            .map((lap) => ({
+                lap: lap.Lap,
+                lapTime: lap.LapTime,
+            }));
+    };
+
+    const recentTireChangeLaps = getLapTimesAfterStop(lastTireChange);
+    const tireFalloffSeconds = recentTireChangeLaps.length > 1
+        ? recentTireChangeLaps[recentTireChangeLaps.length - 1].lapTime - recentTireChangeLaps[0].lapTime
+        : 0;
+
+    const lastPitStop = filteredPitStops.at(-1);
 
     /* const lapsSinceTireChange =
         driverLapData && lastTireChange
@@ -334,6 +355,29 @@ export default function DriverData() {
     const stopDurations =
         filteredPitStops.length > 1 ? standardDeviation(filteredPitStops.map((stop) => stop.pit_stop_duration)) : 0;
 
+    const latestPitStop = selectedDriver ? filteredPitStops.at(-1) ?? null : null;
+    const lastStopLapTimeWindow = latestPitStop && driverLapData
+        ? driverLapData.Laps.filter((lap) => lap.Lap >= latestPitStop.lap_count - 3 && lap.Lap <= latestPitStop.lap_count + 3)
+        : [];
+    const lastStopAvgLapTime = lastStopLapTimeWindow.length > 0
+        ? lastStopLapTimeWindow.reduce((sum, lap) => sum + lap.LapTime, 0) / lastStopLapTimeWindow.length
+        : 0;
+    const freshTireWindow = recentTireChangeLaps.slice(0, 3);
+    const freshTireAvgLapTime = freshTireWindow.length > 0
+        ? freshTireWindow.reduce((sum, lap) => sum + lap.lapTime, 0) / freshTireWindow.length
+        : 0;
+    const lapTimeRecovery = latestPitStop && lastStopAvgLapTime > 0 && freshTireAvgLapTime > 0
+        ? Math.max(0, lastStopAvgLapTime - freshTireAvgLapTime)
+        : 0;
+    const pitStopDurationScore = latestPitStop
+        ? Math.max(0, Math.min(100, 100 - ((latestPitStop.pit_stop_duration - avgPitStopTime) / Math.max(avgPitStopTime, 1)) * 100))
+        : 0;
+    const trackPositionScore = Math.max(0, Math.min(100, 50 + (latestPitStop?.positions_gained_lost ?? 0) * 10));
+    const lapRecoveryScore = Math.max(0, Math.min(100, (lapTimeRecovery / 2) * 100));
+    const pitStopEfficiencyRating = latestPitStop
+        ? Math.round((pitStopDurationScore * 0.4) + (trackPositionScore * 0.35) + (lapRecoveryScore * 0.25))
+        : 0;
+
     const avgTone = selectedDriver ? (avgPitStopTime < allDriverAvg ? "good" : "bad") : "neutral";
 
     const chartAxisStyle = {
@@ -355,6 +399,11 @@ export default function DriverData() {
                     <Link to="/table" className="nav-link">
                         <Button variant="outlined" className="secondary-btn">
                             Data Table
+                        </Button>
+                    </Link>
+                    <Link to="/standings" className="nav-link">
+                        <Button variant="outlined" className="secondary-btn">
+                            Chase Standings
                         </Button>
                     </Link>
                 </div>
@@ -490,6 +539,20 @@ export default function DriverData() {
                                             {currentLap && lastRightTireChange ? lapsSinceRightTireChange : '—'}
                                         </span>
                                     </div>
+                                    {recentTireChangeLaps.length > 1 && (
+                                        <div className="net-cost-row">
+                                            <span className="net-cost-label">Falloff</span>
+                                            <span className="kpi-value neutral" style={{ fontSize: '1rem', lineHeight: 1.4 }}>
+                                                +{roundToUp(tireFalloffSeconds, 3)}s
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="net-cost-row">
+                                        <span className="net-cost-label">Eff. rating</span>
+                                        <span className="kpi-value neutral" style={{ fontSize: '1rem', lineHeight: 1.4 }}>
+                                            {pitStopEfficiencyRating}/100
+                                        </span>
+                                    </div>
                                 </>
                             ) : (
                                 <p className="kpi-meta">Select a driver to view tire-change timing</p>
@@ -513,6 +576,33 @@ export default function DriverData() {
                 </Grid>
 
                 <Grid size={{ xs: 12, lg: 8 }}>
+                    <div className="chart-panel">
+                        <div className="chart-header">
+                            <p className="chart-title">Lap Time After Tire Change</p>
+                        </div>
+                        {recentTireChangeLaps.length > 0 ? (
+                            <LineChart
+                                height={300}
+                                width={980}
+                                series={[
+                                    {
+                                        data: recentTireChangeLaps.map((lap) => lap.lapTime),
+                                        label: 'Lap Time Since Last Tire Change',
+                                        curve: 'linear',
+                                    },
+                                ]}
+                                xAxis={[{ data: recentTireChangeLaps.map((lap) => lap.lap), label: 'Lap' }]}
+                                yAxis={[{ ...chartAxisStyle, label: 'Lap Time (s)' }]}
+                                margin={{ left: 60, right: 20, top: 20, bottom: 60 }}
+                                sx={{ width: '100%', maxWidth: '980px', margin: '0 auto', display: 'block' }}
+                            />
+                        ) : (
+                            <p className="kpi-meta">Select a driver and a recent tire change to view lap-time falloff.</p>
+                        )}
+                    </div>
+                </Grid>
+
+                <Grid size={{ xs: 12, lg: 12 }}>
                     <div className="table-panel">
                         <div className="chart-header">
                             <p className="chart-title">Recent Pit Stops</p>

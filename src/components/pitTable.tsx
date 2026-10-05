@@ -229,6 +229,15 @@ export default function AddItem() {
               )
             : 0;
 
+    const getEfficiencyRating = (stop: PitStop) => {
+        const durationScore = Math.max(0, Math.min(100, 100 - ((stop.pit_stop_duration - avgStopTime) / Math.max(avgStopTime, 1)) * 100));
+        const positionScore = Math.max(0, Math.min(100, 50 + stop.positions_gained_lost * 10));
+        const zValue = zScore(stop.pit_stop_duration, avgStopTime, stopStdDev || 1);
+        const zScoreScore = Math.max(0, Math.min(100, 100 - Math.abs(zValue) * 20));
+        const efficiency = (durationScore * 0.45) + (positionScore * 0.35) + (zScoreScore * 0.2);
+        return Math.round(efficiency);
+    };
+
     return (
         <div className="dashboard-shell">
             <header className="page-header">
@@ -240,6 +249,11 @@ export default function AddItem() {
                     <Link to="/" className="nav-link">
                         <Button variant="outlined" className="secondary-btn">
                             Analytics
+                        </Button>
+                    </Link>
+                    <Link to="/standings" className="nav-link">
+                        <Button variant="outlined" className="secondary-btn">
+                            Chase Standings
                         </Button>
                     </Link>
                 </div>
@@ -292,6 +306,7 @@ export default function AddItem() {
                                 <th>Pit Stop Duration</th>
                                 <th>Positions Gained/Lost</th>
                                 <th>Pit Stop Type</th>
+                                <th>Efficiency</th>
                                 <th>Z-Score</th>
                                 <th>Top %</th>
                             </tr>
@@ -306,6 +321,8 @@ export default function AddItem() {
                                           ? 'status-yellow'
                                           : 'status-red';
 
+                                const efficiency = getEfficiencyRating(stop);
+
                                 return (
                                     <tr key={`${stop.driver_name}-${stop.lap_count}-${stop.vehicle_number}`}>
                                         <td>{stop.vehicle_number}</td>
@@ -316,6 +333,7 @@ export default function AddItem() {
                                         <td>
                                             <span className={`status-pill ${statusClass}`}>{stop.pit_stop_type}</span>
                                         </td>
+                                        <td>{efficiency}</td>
                                         <td>{roundToUp(zValue, 6)}</td>
                                         <td>{roundToUp(cumulativeStdNormalProbability(zValue) * 100, 2)}%</td>
                                     </tr>
