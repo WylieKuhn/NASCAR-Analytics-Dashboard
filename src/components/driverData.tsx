@@ -226,6 +226,8 @@ export default function DriverData() {
         }
 
         async function getCurrentLap() {
+            if (!selectedRace) return;
+
             try {
                 const response = await fetch(`https://cf.nascar.com/cacher/live/series_1/${selectedRace.race_id}/live-feed.json`);
 
